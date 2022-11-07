@@ -16,19 +16,63 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
-client.connect((err) => {
-  const collection = client.db("test").collection("devices");
-  // perform actions on the collection object
-  console.log("db connected");
-  client.close();
-});
 
-app.get("/", (req, res) => {
-  res.send({
-    status: "success",
-    massage: "Flash Photography Point sever in running",
-  });
-});
+async function run() {
+  try {
+    // database and collection name
+    const servicesCollection = client
+      .db("FlashPhotographyPoint")
+      .collection("services");
+    const reviewUserCollection = client
+      .db("FlashPhotographyPoint")
+      .collection("reviewUser");
+
+    //end point
+    app.get("/", (req, res) => {
+      res.send({
+        status: "success",
+        massage: "Flash Photography Point sever in running",
+      });
+    });
+
+    //services
+
+    app.get("/services", async (req, res) => {
+      const query = {};
+      const cursor = servicesCollection.find(query);
+      const services = await cursor.toArray();
+      res.send({
+        status: "success",
+        data: services,
+      });
+    });
+
+    app.post("/services", async (req, res) => {
+      const query = req.body;
+      const services = await servicesCollection.insertOne({
+        name: query.name,
+        image: query.image,
+        price: query.price,
+        rating: query.rating,
+        description: query.description,
+      });
+
+      if (services.insertedId) {
+        res.send({
+          status: "success",
+          data: services,
+        });
+      } else {
+        res.send({
+          status: "Couldn't create the services",
+        });
+      }
+    });
+  } finally {
+  }
+}
+
+run().catch((error) => console.error(error));
 
 app.listen(port, () => {
   console.log(`Server is running port: ${port}`);
