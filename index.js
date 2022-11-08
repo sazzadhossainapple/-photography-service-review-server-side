@@ -66,7 +66,6 @@ async function run() {
         name: query.name,
         image: query.image,
         price: query.price,
-        rating: query.rating,
         description: query.description,
       });
 
@@ -144,6 +143,16 @@ async function run() {
           status: "Couldn't create the services",
         });
       }
+    });
+
+    app.delete("/myReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const userReview = reviewUserCollection.deleteOne(query);
+      res.send({
+        status: "success",
+        data: userReview,
+      });
     });
   } finally {
   }
