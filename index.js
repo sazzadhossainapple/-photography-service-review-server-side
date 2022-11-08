@@ -81,6 +81,33 @@ async function run() {
         });
       }
     });
+
+    // review user
+
+    app.post("/userReview", async (req, res) => {
+      const query = req.body;
+      const date = { date: new Date() };
+      const userReview = await reviewUserCollection.insertOne({
+        serviceId: query.serviceId,
+        serviceTitle: query.serviceTitle,
+        reviewMassage: query.reviewMassage,
+        userName: query.userName,
+        email: query.email,
+        userImage: query.userImage,
+        date: date.date,
+      });
+
+      if (userReview.insertedId) {
+        res.send({
+          status: "success",
+          data: userReview,
+        });
+      } else {
+        res.send({
+          status: "Couldn't create the services",
+        });
+      }
+    });
   } finally {
   }
 }
