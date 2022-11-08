@@ -84,6 +84,43 @@ async function run() {
 
     // review user
 
+    app.get("/allUserReview", async (req, res) => {
+      let query = {};
+
+      if (req.query.serviceId) {
+        query = {
+          serviceId: req.query.serviceId,
+        };
+      }
+
+      const date = { date: -1 };
+      const cursor = reviewUserCollection.find(query).sort(date);
+      const userReview = await cursor.toArray();
+      res.send({
+        status: "success",
+        data: userReview,
+      });
+    });
+
+    app.get("/myReview", async (req, res) => {
+      const email = req.query.email;
+      const serviceId = req.query.serviceId;
+      let query = {};
+      if (email && serviceId) {
+        query = {
+          email: email,
+          serviceId: serviceId,
+        };
+      }
+      const date = { date: -1 };
+      const cursor = reviewUserCollection.find(query).sort(date);
+      const myReview = await cursor.toArray();
+      res.send({
+        status: "success",
+        data: myReview,
+      });
+    });
+
     app.post("/userReview", async (req, res) => {
       const query = req.body;
       const date = { date: new Date() };
