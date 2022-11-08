@@ -104,12 +104,12 @@ async function run() {
 
     app.get("/myReview", async (req, res) => {
       const email = req.query.email;
-      const serviceId = req.query.serviceId;
+      // const serviceId = req.query.serviceId;
       let query = {};
-      if (email && serviceId) {
+      if (email) {
         query = {
           email: email,
-          serviceId: serviceId,
+          // serviceId: serviceId,
         };
       }
       const date = { date: -1 };
