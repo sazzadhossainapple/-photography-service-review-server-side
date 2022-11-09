@@ -103,12 +103,10 @@ async function run() {
 
     app.get("/myReview", async (req, res) => {
       const email = req.query.email;
-      // const serviceId = req.query.serviceId;
       let query = {};
       if (email) {
         query = {
           email: email,
-          // serviceId: serviceId,
         };
       }
       const date = { date: -1 };
@@ -117,6 +115,17 @@ async function run() {
       res.send({
         status: "success",
         data: myReview,
+      });
+    });
+
+    app.get("/myReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const reviewUseer = await reviewUserCollection.findOne(query);
+
+      res.send({
+        status: "success",
+        data: reviewUseer,
       });
     });
 
@@ -152,6 +161,34 @@ async function run() {
       res.send({
         status: "success",
         data: userReview,
+      });
+    });
+
+    app.put("/myReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const reviewUser = req.body;
+      const option = { upsert: true };
+      const updatedReview = {
+        $set: {
+          serviceId: reviewUser.serviceId,
+          serviceTitle: reviewUser.serviceTitle,
+          reviewMassage: reviewUser.reviewMassage,
+          userName: reviewUser.userName,
+          email: reviewUser.email,
+          userImage: reviewUser.userImage,
+          date: date.date,
+        },
+      };
+
+      const updateReviewUser = await reviewUserCollection.updateOne(
+        query,
+        updatedReview,
+        option
+      );
+      res.send({
+        status: "success",
+        data: updateReviewUser,
       });
     });
   } finally {
