@@ -71,11 +71,24 @@ async function run() {
     //services
 
     // get all services
-    app.get("/services", async (req, res) => {
-      const size = parseInt(req.query.size);
+    app.get("/homeServices", async (req, res) => {
       const query = {};
-      const cursor = servicesCollection.find(query);
-      const services = await cursor.limit(size).toArray();
+      const date = { date: -1 };
+
+      const cursor = servicesCollection.find(query).limit(3).sort(date);
+      const services = await cursor.toArray();
+
+      res.send({
+        status: "success",
+        data: services,
+      });
+    });
+    app.get("/services", async (req, res) => {
+      const query = {};
+      const date = { date: -1 };
+
+      const cursor = servicesCollection.find(query).sort(date);
+      const services = await cursor.toArray();
 
       res.send({
         status: "success",
@@ -98,11 +111,13 @@ async function run() {
     // services added post
     app.post("/services", async (req, res) => {
       const query = req.body;
+      const date = { date: new Date() };
       const services = await servicesCollection.insertOne({
         name: query.name,
         image: query.image,
         price: query.price,
         description: query.description,
+        date: date.date,
       });
 
       if (services.insertedId) {
