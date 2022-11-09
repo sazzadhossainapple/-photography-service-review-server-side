@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -9,6 +10,29 @@ const app = express();
 //middleware
 app.use(cors());
 app.use(express.json());
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({
+      message: "unauthorized access",
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({
+        message: "Forbidden access",
+      });
+    }
+
+    req.decoded = decoded;
+    next();
+  });
+}
 
 const uri = `mongodb+srv://${process.env.DB_USERS}:${process.env.DB_PASSWORD}@cluster0.kqw4pwk.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
@@ -27,7 +51,7 @@ async function run() {
       .db("FlashPhotographyPoint")
       .collection("reviewUser");
 
-    //end point
+    //start
     app.get("/", (req, res) => {
       res.send({
         status: "success",
@@ -35,8 +59,18 @@ async function run() {
       });
     });
 
+    //jwt
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1d",
+      });
+      res.send({ token });
+    });
+
     //services
 
+    // get all services
     app.get("/services", async (req, res) => {
       const size = parseInt(req.query.size);
       const query = {};
@@ -49,6 +83,7 @@ async function run() {
       });
     });
 
+    // single service get by id
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -60,6 +95,7 @@ async function run() {
       });
     });
 
+    // services added post
     app.post("/services", async (req, res) => {
       const query = req.body;
       const services = await servicesCollection.insertOne({
@@ -83,6 +119,7 @@ async function run() {
 
     // review user
 
+    // get all user review
     app.get("/allUserReview", async (req, res) => {
       let query = {};
 
@@ -101,8 +138,17 @@ async function run() {
       });
     });
 
-    app.get("/myReview", async (req, res) => {
+    // only single user review get all
+    app.get("/myReview", verifyJWT, async (req, res) => {
       const email = req.query.email;
+      const decoded = req.decoded;
+
+      if (decoded.email !== email) {
+        res.status(403).send({
+          message: "Forbidden access",
+        });
+      }
+
       let query = {};
       if (email) {
         query = {
@@ -118,6 +164,7 @@ async function run() {
       });
     });
 
+    // only single user review get by id
     app.get("/myReview/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -129,6 +176,7 @@ async function run() {
       });
     });
 
+    // all user review added
     app.post("/userReview", async (req, res) => {
       const query = req.body;
       const date = { date: new Date() };
@@ -154,6 +202,7 @@ async function run() {
       }
     });
 
+    // review delete by id
     app.delete("/myReview/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
@@ -164,27 +213,22 @@ async function run() {
       });
     });
 
-    app.put("/myReview/:id", async (req, res) => {
+    // review updated by id
+    app.patch("/myReview/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const reviewUser = req.body;
-      const option = { upsert: true };
       const updatedReview = {
         $set: {
-          serviceId: reviewUser.serviceId,
           serviceTitle: reviewUser.serviceTitle,
           reviewMassage: reviewUser.reviewMassage,
-          userName: reviewUser.userName,
           email: reviewUser.email,
-          userImage: reviewUser.userImage,
-          date: date.date,
         },
       };
 
       const updateReviewUser = await reviewUserCollection.updateOne(
         query,
-        updatedReview,
-        option
+        updatedReview
       );
       res.send({
         status: "success",
